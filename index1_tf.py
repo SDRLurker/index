@@ -12,6 +12,10 @@ def daterange(start_date, end_date):
         yield start_date + datetime.timedelta(n)
 
 def make_train_data():
+    start = datetime.datetime(2015,1,2)
+    end = datetime.datetime(2016,7,22)
+    f1 = web.DataReader("^DJI",'yahoo',start,end)
+    f2 = web.DataReader("^KS11",'yahoo',start,end)
     dates = []
     x_data = []
     y_data = []
@@ -39,11 +43,6 @@ def normalize(data):
     return z_data, max_data, min_data
 
 # 프로그램 시작
-start = datetime.datetime(2015,1,2)
-end = datetime.datetime(2016,7,22)
-f1 = web.DataReader("^DJI",'yahoo',start,end)
-f2 = web.DataReader("^KS11",'yahoo',start,end)
-
 PICKLE_FILE = 'data.pck'
 import os.path
 if os.path.isfile(PICKLE_FILE):
@@ -93,20 +92,20 @@ for step in range(2001):
     if step % 20 == 0:
         print(step, sess.run(cost, feed_dict={X:x_data, Y:y_data}), sess.run(W), sess.run(b))
 
-# cost가 최소값이 되는 W,b
+# cost가 최소값이 되는 W,b를 출력.
 print(sess.run(W), " * X + ", sess.run(b))
-plt.plot(x_data, y_data, 'ro')
-line_x = np.arange(min(x_data), max(x_data), 0.01)
-plt.plot(line_x, sess.run(hypothesis, feed_dict={X:line_x}))
-plt.show()
 
-
+# 다우존스지수가 18313.77일 때 코스피지수 값을 예측합니다.
 x_test = 18313.77
 x_test_norm = (x_test - x_min) / (x_max - x_min)
 y_test_norm = sess.run(hypothesis, feed_dict={X:x_test_norm})
 y_test = y_test_norm * (y_max - y_min) + y_min
-
 print('2016-08-02 DOW30 : ', x_test, x_test_norm)
 print('2016-08-02 estimated KOSPI : ', y_test, y_test_norm)
 print('2016-08-02 KOSPI : ', 2019.03)
 
+# 그래프를 그립니다.
+plt.plot(x_data, y_data, 'ro')
+line_x = np.arange(min(x_data), max(x_data), 0.01)
+plt.plot(line_x, sess.run(hypothesis, feed_dict={X:line_x}))
+plt.show()

@@ -6,16 +6,15 @@ import matplotlib.pyplot as plt
 import pickle
 import os
 
-start = datetime.datetime(2015,1,2)
-end = datetime.datetime(2016,7,22)
-f1 = web.DataReader("^DJI",'yahoo',start,end)
-f2 = web.DataReader("^KS11",'yahoo',start,end)
-
 def daterange(start_date, end_date):
     for n in range(int ((end_date - start_date).days)):
         yield start_date + datetime.timedelta(n)
 
 def make_train_data():
+    start = datetime.datetime(2015,1,2)
+    end = datetime.datetime(2016,7,22)
+    f1 = web.DataReader("^DJI",'yahoo',start,end)
+    f2 = web.DataReader("^KS11",'yahoo',start,end)
     dates = []
     x_data = []
     y_data = []
@@ -75,6 +74,7 @@ f.close()
 for i in range(len(dates)):
     print(dates[i], x_data[i], y_data[i])
     
+# 정규방정식(normal equation) 알고리즘을 통해 cost 최소가 되는 가설함수를 찾습니다. 
 print()
 POLY = 1
 x_datas = make_poly_x(POLY, x_data)
@@ -85,16 +85,16 @@ theta = np.dot(np.dot(np.linalg.pinv(np.dot(Xt, X)), Xt), Y)
 print_hypothesis(POLY, theta)
 print('get_sumerror : ', get_sumerror(POLY, theta, x_data, y_data))
 
+# 다우존스지수가 18313.77일 때 코스피지수 값을 예측합니다.
 print()
 x_test = 18313.77
 y_test = get_hypothesis(POLY, theta, x_test)
-
 print('2016-08-02 DOW30 : ', x_test)
 print('2016-08-02 estimated KOSPI : ', y_test)
 print('2016-08-02 KOSPI : ', 2019.03)
 
+# 그래프를 그립니다.
 plt.plot(x_data, y_data, 'ro')
-
 line_x = [ x for x in range( int(min(x_data)), int(max(x_data)) ) ]
 line_y = [ get_hypothesis(POLY, theta, x) for x in range( int(min(x_data)), int(max(x_data)) ) ]
 plt.plot(line_x, line_y)
