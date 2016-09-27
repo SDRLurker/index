@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import tensorflow as tf
 import pandas_datareader.data as web
 import datetime
@@ -6,11 +6,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 import os.path
-
-start = datetime.datetime(2015,1,2)
-end = datetime.datetime(2016,7,22)
-f1 = web.DataReader("^DJI",'yahoo',start,end)
-f2 = web.DataReader("^KS11",'yahoo',start,end)
 
 def daterange(start_date, end_date):
     for n in range(int ((end_date - start_date).days)):
@@ -36,14 +31,19 @@ def make_train_data():
     return dates, x_data, y_data
                 
 def normalize(data):
-        z_data = []
-        min_data = min(data)
-        max_data = max(data)
-        for x in data:
-                z_data.append( (x - min_data) / (max_data - min_data) )
-        return z_data, max_data, min_data
+    z_data = []
+    min_data = min(data)
+    max_data = max(data)
+    for x in data:
+        z_data.append( (x - min_data) / (max_data - min_data) )
+    return z_data, max_data, min_data
 
 # 프로그램 시작
+start = datetime.datetime(2015,1,2)
+end = datetime.datetime(2016,7,22)
+f1 = web.DataReader("^DJI",'yahoo',start,end)
+f2 = web.DataReader("^KS11",'yahoo',start,end)
+
 PICKLE_FILE = 'data.pck'
 import os.path
 if os.path.isfile(PICKLE_FILE):
@@ -62,22 +62,20 @@ for i in range(len(dates)):
 x_data, x_max, x_min = normalize(x_data)
 y_data, y_max, y_min = normalize(y_data)
 
-# Try to find values for W and b that compute y_data = W * x_data + b
-# ( We know that W should be 1 and b 0, but Tensorflow will
-# figure out that out for us. )
+# Tensorflow에서 Gradient descent 알고리즘을 통해 cost최소가 되는 가설함수, h(x)를 찾습니다.
 W = tf.Variable(tf.random_uniform([1], -1.0, 1.0))
 b = tf.Variable(tf.zeros([1]))
 
 X = tf.placeholder(tf.float32)
 Y = tf.placeholder(tf.float32)
 
-# Our hypothesis
+# 가설함수, h(x) 
 hypothesis = W * X + b
 
-# Simplified cost function
+# cost 함수.
 cost = tf.reduce_mean(tf.square(hypothesis - Y))
 
-# Minimize
+# cost 최소값을 Gradient descent 알고리즘을 통해 찾습니다.
 a = tf.Variable(0.1)	# Learning rate, alpha
 optimizer = tf.train.GradientDescentOptimizer(a)
 train = optimizer.minimize(cost)
@@ -91,9 +89,17 @@ sess.run(init)
 
 # Fit the line.
 for step in range(2001):
-	sess.run(train, feed_dict={X:x_data, Y:y_data})
-	if step % 20 == 0:
-		print(step, sess.run(cost, feed_dict={X:x_data, Y:y_data}), sess.run(W), sess.run(b))
+    sess.run(train, feed_dict={X:x_data, Y:y_data})
+    if step % 20 == 0:
+        print(step, sess.run(cost, feed_dict={X:x_data, Y:y_data}), sess.run(W), sess.run(b))
+
+# cost가 최소값이 되는 W,b
+print(sess.run(W), " * X + ", sess.run(b))
+plt.plot(x_data, y_data, 'ro')
+line_x = np.arange(min(x_data), max(x_data), 0.01)
+plt.plot(line_x, sess.run(hypothesis, feed_dict={X:line_x}))
+plt.show()
+
 
 x_test = 18313.77
 x_test_norm = (x_test - x_min) / (x_max - x_min)
@@ -104,8 +110,3 @@ print('2016-08-02 DOW30 : ', x_test, x_test_norm)
 print('2016-08-02 estimated KOSPI : ', y_test, y_test_norm)
 print('2016-08-02 KOSPI : ', 2019.03)
 
-print(sess.run(W), " * X + ", sess.run(b))
-plt.plot(x_data, y_data, 'ro')
-line_x = np.arange(min(x_data), max(x_data), 0.01)
-plt.plot(line_x, sess.run(hypothesis, feed_dict={X:line_x}))
-plt.show()
